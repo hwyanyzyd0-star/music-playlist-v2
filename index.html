@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مشغل بلايليست يوتيوب | Yazeed Al7wyan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b1210;
+    --panel: #101915;
+    --panel-2: #141f1a;
+    --green: #006c35;
+    --green-bright: #0e9b52;
+    --gold: #c9a227;
+    --text: #ede9df;
+    --muted: #7c8c86;
+    --line: #1e2b25;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Cairo', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 90px;
+  }
+  h1,h2,h3,.brand{ font-family:'Cairo', sans-serif; }
+
+  /* Sadu-inspired pattern divider — a nod to traditional Saudi weaving */
+  .sadu-strip{
+    height: 6px;
+    width: 100%;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--green) 0 10px,
+      var(--gold) 10px 12px,
+      var(--green) 12px 22px,
+      #7a1f1f 22px 24px
+    );
+    opacity: 0.9;
+  }
+
+  header{
+    padding: 28px 20px 18px;
+    text-align: center;
+    position: relative;
+  }
+  header h1{
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--green-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p{
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .container{
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media (min-width: 860px){
+    .container{ grid-template-columns: 1.1fr 1fr; align-items: start; }
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+
+  .search-row{
+    display:flex; gap:8px; margin-bottom:14px;
+  }
+  input[type="text"], input[type="file"]{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 0.95rem;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+  }
+  input[type="text"]:focus{ border-color: var(--green-bright); }
+
+  button{
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  button:active{ transform: scale(0.96); }
+
+  .btn-primary{
+    background: var(--green-bright);
+    color: #05130c;
+    padding: 11px 18px;
+    white-space: nowrap;
+  }
+  .btn-ghost{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 8px 12px;
+  }
+  .btn-ghost:hover{ border-color: var(--gold); }
+
+  #player-wrap{
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  #player{ width:100%; height:100%; }
+
+  .now-title{
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    min-height: 1.3em;
+    color: var(--gold);
+  }
+
+  .controls{
+    display:flex; gap:8px; justify-content:center; margin-bottom: 4px;
+  }
+
+  .search-results, .playlist{
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: var(--panel-2);
+    border: 1px solid transparent;
+  }
+  .item:hover{ border-color: var(--line); }
+  .item img{
+    width: 64px; height: 36px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .item .title{
+    font-size: 0.82rem;
+    line-height: 1.3;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .item.playing{ border-color: var(--green-bright); background: #10241a; }
+  .drag-handle{ cursor: grab; color: var(--muted); font-size: 1.1rem; padding: 0 2px; }
+  .item.dragging{ opacity: 0.4; }
+
+  .section-title{
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .empty{
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align:center;
+    padding: 24px 10px;
+  }
+
+  .export-row{
+    display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .badge{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(90deg, #05130c, #0d1f16, #05130c);
+    color: var(--gold);
+    text-align: center;
+    padding: 10px 12px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-top: 1px solid var(--green);
+    animation: glow 3s ease-in-out infinite;
+  }
+  @keyframes glow{
+    0%, 100% { box-shadow: 0 0 6px rgba(0,108,53,0.4) inset; }
+    50% { box-shadow: 0 0 22px rgba(0,108,53,0.9) inset; }
+  }
+
+  ::-webkit-scrollbar{ width: 6px; }
+  ::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="sadu-strip"></div>
+<header>
+  <h1 class="brand">🎵 بلايليست</h1>
+  <p>ابحث، رتّب، وشغّل بلايليستك من يوتيوب</p>
+</header>
+
+<div class="container">
+
+  <!-- LEFT: Player + Search -->
+  <div>
+    <div class="panel">
+      <div id="player-wrap"><div id="player"></div></div>
+      <div class="now-title" id="nowTitle">اختر أغنية من البلايليست للتشغيل</div>
+      <div class="controls">
+        <button class="btn-ghost" id="prevBtn">⏮ السابق</button>
+        <button class="btn-ghost" id="nextBtn">التالي ⏭</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <div class="section-title">البحث في يوتيوب</div>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="اكتب اسم الأغنية أو الفنان...">
+        <button class="btn-primary" id="searchBtn">بحث</button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <div class="empty">نتائج البحث بتظهر هنا</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Playlist -->
+  <div class="panel">
+    <div class="section-title">بلايليستي</div>
+    <div class="playlist" id="playlist">
+      <div class="empty">بلايليستك فاضية — ابحث وأضف أغاني</div>
+    </div>
+
+    <div class="export-row">
+      <button class="btn-ghost" id="exportJson">⬇ JSON</button>
+      <button class="btn-ghost" id="exportCsv">⬇ CSV</button>
+      <button class="btn-ghost" id="exportTxt">⬇ TXT</button>
+      <label class="btn-ghost" style="display:inline-flex; align-items:center; padding:8px 12px;">
+        ⬆ استيراد JSON
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+      </label>
+    </div>
+  </div>
+
+</div>
+
+<div class="badge">Yazeed Al7wyan · Made in Saudi Arabia 🇸🇦</div>
+
+<script>
+/* ====== CONFIG ====== */
+const YT_API_KEY = "AIzaSyDSR8DiiBMiQcnQeo2lW5XK7XySsQTublE"; // note: public quota only, no privileged access
+const STORAGE_KEY = "musicPlaylistItems_v2";
+
+/* ====== STATE ====== */
+let playlist = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let currentIndex = -1;
+let ytPlayer = null;
+let playerReady = false;
+
+/* ====== YOUTUBE IFRAME PLAYER ====== */
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('player', {
+    height: '100%', width: '100%',
+    playerVars: { rel: 0 },
+    events: {
+      onReady: () => { playerReady = true; },
+      onStateChange: (e) => {
+        if(e.data === YT.PlayerState.ENDED) playNext();
+      }
+    }
+  });
+}
+(function loadYT(){
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.body.appendChild(tag);
+})();
+
+/* ====== SEARCH ====== */
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchResults = document.getElementById('searchResults');
+
+searchBtn.addEventListener('click', doSearch);
+searchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSearch(); });
+
+async function doSearch(){
+  const q = searchInput.value.trim();
+  if(!q) return;
+  searchResults.innerHTML = `<div class="empty">جاري البحث...</div>`;
+  try{
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=12&q=${encodeURIComponent(q)}&key=${YT_API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!data.items || data.items.length === 0){
+      searchResults.innerHTML = `<div class="empty">ما فيه نتائج، جرّب كلمة ثانية</div>`;
+      return;
+    }
+    searchResults.innerHTML = '';
+    data.items.forEach(item => {
+      const videoId = item.id.videoId;
+      const title = item.snippet.title;
+      const thumb = item.snippet.thumbnails.default.url;
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <img src="${thumb}" alt="">
+        <div class="title">${escapeHtml(title)}</div>
+        <button class="btn-ghost" data-add>➕</button>
+      `;
+      div.querySelector('[data-add]').addEventListener('click', () => addToPlaylist({ videoId, title }));
+      searchResults.appendChild(div);
+    });
+  }catch(err){
+    searchResults.innerHTML = `<div class="empty">صار خطأ بالبحث. تأكد إنك ما تشغّله محليًا — لازم يكون منشور على GitHub Pages بسبب قيود CORS.</div>`;
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ====== PLAYLIST MANAGEMENT ====== */
+function addToPlaylist(track){
+  playlist.push(track);
+  save();
+  renderPlaylist();
+  if(currentIndex === -1) playAt(0);
+}
+
+function removeFromPlaylist(index){
+  playlist.splice(index, 1);
+  if(currentIndex === index) { currentIndex = -1; updateNowTitle(); }
+  else if(currentIndex > index) currentIndex--;
+  save();
+  renderPlaylist();
+}
+
+function playAt(index){
+  if(index < 0 || index >= playlist.length || !playerReady) return;
+  currentIndex = index;
+  ytPlayer.loadVideoById(playlist[index].videoId);
+  ytPlayer.playVideo();
+  updateNowTitle();
+  renderPlaylist();
+}
+
+function playNext(){ if(playlist.length) playAt((currentIndex + 1) % playlist.length); }
+function playPrev(){ if(playlist.length) playAt((currentIndex - 1 + playlist.length) % playlist.length); }
+
+document.getElementById('nextBtn').addEventListener('click', playNext);
+document.getElementById('prevBtn').addEventListener('click', playPrev);
+
+function updateNowTitle(){
+  const el = document.getElementById('nowTitle');
+  el.textContent = currentIndex >= 0 ? `▶ يشتغل الحين: ${playlist[currentIndex].title}` : 'اختر أغنية من البلايليست للتشغيل';
+}
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist)); }
+
+function renderPlaylist(){
+  const el = document.getElementById('playlist');
+  if(playlist.length === 0){
+    el.innerHTML = `<div class="empty">بلايليستك فاضية — ابحث وأضف أغاني</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  playlist.forEach((track, i) => {
+    const div = document.createElement('div');
+    div.className = 'item' + (i === currentIndex ? ' playing' : '');
+    div.draggable = true;
+    div.dataset.index = i;
+    div.innerHTML = `
+      <span class="drag-handle">⠿</span>
+      <div class="title">${escapeHtml(track.title)}</div>
+      <button class="btn-ghost" data-play>▶</button>
+      <button class="btn-ghost" data-remove>✕</button>
+    `;
+    div.querySelector('[data-play]').addEventListener('click', () => playAt(i));
+    div.querySelector('[data-remove]').addEventListener('click', () => removeFromPlaylist(i));
+    attachDragEvents(div);
+    el.appendChild(div);
+  });
+}
+
+/* ====== DRAG & DROP REORDER ====== */
+let dragSrcIndex = null;
+function attachDragEvents(el){
+  el.addEventListener('dragstart', () => {
+    dragSrcIndex = Number(el.dataset.index);
+    el.classList.add('dragging');
+  });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  el.addEventListener('dragover', (e) => e.preventDefault());
+  el.addEventListener('drop', () => {
+    const targetIndex = Number(el.dataset.index);
+    if(dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+    const [moved] = playlist.splice(dragSrcIndex, 1);
+    playlist.splice(targetIndex, 0, moved);
+    if(currentIndex === dragSrcIndex) currentIndex = targetIndex;
+    save();
+    renderPlaylist();
+  });
+}
+
+/* ====== EXPORT / IMPORT ====== */
+function download(filename, content, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportJson').addEventListener('click', () => {
+  download('playlist.json', JSON.stringify(playlist, null, 2), 'application/json');
+});
+
+document.getElementById('exportCsv').addEventListener('click', () => {
+  const rows = ['videoId,title', ...playlist.map(t => `${t.videoId},"${t.title.replace(/"/g,'""')}"`)];
+  download('playlist.csv', rows.join('\n'), 'text/csv');
+});
+
+document.getElementById('exportTxt').addEventListener('click', () => {
+  const lines = playlist.map((t, i) => `${i+1}. ${t.title} — https://youtu.be/${t.videoId}`);
+  download('playlist.txt', lines.join('\n'), 'text/plain');
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const imported = JSON.parse(reader.result);
+      if(Array.isArray(imported)){
+        playlist = imported;
+        save();
+        renderPlaylist();
+      }
+    }catch(err){
+      alert('ملف JSON غير صالح');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ====== INIT ====== */
+renderPlaylist();
+</script>
+
+</body>
+</html>
