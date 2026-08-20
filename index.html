@@ -25,7 +25,7 @@
     color: var(--text);
     font-family: 'Inter', 'Cairo', sans-serif;
     min-height: 100vh;
-    padding-bottom: 90px;
+    padding-bottom: 105px;
   }
   h1,h2,h3,.brand{ font-family:'Cairo', sans-serif; }
 
@@ -75,40 +75,59 @@
     opacity: 0;
     animation: introFadeIn 0.4s ease forwards 0.15s, spin 0.9s linear infinite 0.15s;
   }
-  .brave-badge{
-    margin-top: 14px;
+  .brave-reveal{
+    margin-top: 16px;
+    width: 60px;
+    height: 60px;
+    position: relative;
+    opacity: 0;
+    animation: introFadeIn 0.3s ease forwards 0.7s;
+  }
+  .brave-circle{
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #FF7A45, #FB542B 60%, #d6431f 100%);
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--panel-2);
+    justify-content: center;
+    clip-path: circle(0% at 50% 50%);
+    animation: braveOpen 0.7s cubic-bezier(0.65, 0, 0.35, 1) forwards 0.9s;
+    box-shadow: 0 0 0 0 rgba(251,84,43,0.4);
+  }
+  .brave-circle svg{
+    width: 34px;
+    height: 34px;
     opacity: 0;
-    transform: scale(0.85);
-    animation: braveIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.75s;
+    transform: scale(0.6);
+    animation: braveIconIn 0.4s ease forwards 1.35s;
   }
-  .brave-badge svg{
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    animation: braveFlicker 1.8s ease-in-out infinite 1.3s;
-  }
-  .brave-badge span{
-    font-size: 0.72rem;
-    color: var(--muted);
+  .brave-text{
+    margin-top: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
     font-family: 'Cairo', sans-serif;
     white-space: nowrap;
+    color: #ff8a5c;
+    opacity: 0;
+    animation: introFadeIn 0.5s ease forwards 1.55s, emberGlow 1.6s ease-in-out infinite 2.1s;
   }
-  .brave-badge b{
+  .brave-text b{
     color: #FB542B;
   }
-  @keyframes braveIn{
-    to{ opacity: 1; transform: scale(1); }
+  @keyframes emberGlow{
+    0%, 100%{
+      text-shadow: 0 0 4px rgba(251,84,43,0.5), 0 0 10px rgba(255,122,69,0.3);
+    }
+    50%{
+      text-shadow: 0 0 10px rgba(251,84,43,0.9), 0 0 22px rgba(255,138,92,0.7), 0 0 34px rgba(255,90,40,0.4);
+    }
   }
-  @keyframes braveFlicker{
-    0%, 100%{ transform: scale(1); }
-    50%{ transform: scale(1.12); }
+  @keyframes braveOpen{
+    to{ clip-path: circle(75% at 50% 50%); }
+  }
+  @keyframes braveIconIn{
+    to{ opacity: 1; transform: scale(1); }
   }
   @keyframes introFadeIn{
     to{ opacity: 1; }
@@ -294,7 +313,7 @@
     background: linear-gradient(90deg, #05130c, #0d1f16, #05130c);
     color: var(--gold);
     text-align: center;
-    padding: 10px 12px;
+    padding: 10px 12px 8px;
     font-family: 'Cairo', sans-serif;
     font-size: 0.8rem;
     font-weight: 700;
@@ -302,6 +321,16 @@
     border-top: 1px solid var(--green);
     animation: glow 3s ease-in-out infinite;
   }
+  .badge .brave-mini{
+    display: block;
+    margin-top: 3px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #ff8a5c;
+    letter-spacing: 0.2px;
+    animation: emberGlow 1.6s ease-in-out infinite;
+  }
+  .badge .brave-mini b{ color: #FB542B; }
   @keyframes glow{
     0%, 100% { box-shadow: 0 0 6px rgba(0,108,53,0.4) inset; }
     50% { box-shadow: 0 0 22px rgba(0,108,53,0.9) inset; }
@@ -318,13 +347,16 @@
   <div class="intro-spinner"></div>
   <div class="intro-logo">🎵 بلايليست</div>
   <div class="intro-sub">صُنع في السعودية 🇸🇦</div>
-  <div class="brave-badge">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L4 5.5V11c0 5 3.4 8.9 8 10.5c4.6-1.6 8-5.5 8-10.5V5.5L12 2Z" fill="#FB542B"/>
-      <path d="M12 5.2L7 7.3v3.4c0 3.4 2.2 6.1 5 7.4c2.8-1.3 5-4 5-7.4V7.3L12 5.2Z" fill="#0b1210"/>
-    </svg>
-    <span>تجربة أفضل في متصفح <b>Brave</b></span>
+  <div class="brave-reveal">
+    <div class="brave-circle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2.5L4.5 5.2v6.1c0 5.1 3.1 8.6 7.5 10.2c4.4-1.6 7.5-5.1 7.5-10.2V5.2L12 2.5Z"
+              fill="none" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M12 5L7 6.9v4.4c0 3.7 2.2 6.2 5 7.4c2.8-1.2 5-3.7 5-7.4V6.9L12 5Z" fill="#ffffff"/>
+      </svg>
+    </div>
   </div>
+  <div class="brave-text">تجربة أفضل في متصفح <b>Brave</b></div>
 </div>
 
 <div class="sadu-strip"></div>
@@ -378,7 +410,7 @@
 
 </div>
 
-<div class="badge">Yazeed Al7wyan · Made in Saudi Arabia 🇸🇦</div>
+<div class="badge">Yazeed Al7wyan · Made in Saudi Arabia 🇸🇦<span class="brave-mini">تجربة أفضل في متصفح <b>Brave</b></span></div>
 
 <script>
 /* ====== INTRO SCREEN LOGIC ====== */
@@ -387,7 +419,7 @@ window.addEventListener('load', () => {
     const intro = document.getElementById('intro');
     intro.classList.add('fade-out');
     setTimeout(() => intro.remove(), 650);
-  }, 2200);
+  }, 2900);
 });
 
 /* ====== CONFIG ====== */
