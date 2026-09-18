@@ -175,6 +175,72 @@
     0%, 100%{ transform: scale(1); }
     50%{ transform: scale(1.15); }
   }
+
+  /* ====== GOOGLE ACCOUNT BAR ====== */
+  .account-bar{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px 0;
+    flex-wrap: wrap;
+  }
+  .gbtn{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .gbtn:hover{ border-color: var(--green-bright); }
+  .account-info{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 6px 12px 6px 6px;
+    border-radius: 999px;
+  }
+  .account-info img{
+    width: 26px; height: 26px;
+    border-radius: 50%;
+  }
+
+  /* ====== MY YOUTUBE PLAYLISTS PANEL ====== */
+  #myPlaylistsPanel{ display: none; }
+  #myPlaylistsPanel.show{ display: block; }
+  .pl-select-row{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  select{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    width: 100%;
+  }
+  .save-row{
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .save-row select{ flex: 1; }
   .sadu-strip{
     height: 6px;
     width: 100%;
@@ -411,6 +477,10 @@
   <p>ابحث، رتّب، وشغّل بلايليستك من يوتيوب</p>
 </header>
 
+<div class="account-bar" id="accountBar">
+  <button class="gbtn" id="signInBtn">🔑 سجّل دخولك بحساب جوجل</button>
+</div>
+
 <div class="container">
 
   <!-- LEFT: Player + Search -->
@@ -437,20 +507,33 @@
   </div>
 
   <!-- RIGHT: Playlist -->
-  <div class="panel">
-    <div class="section-title">بلايليستي</div>
-    <div class="playlist" id="playlist">
-      <div class="empty">بلايليستك فاضية — ابحث وأضف أغاني</div>
+  <div>
+    <div class="panel">
+      <div class="section-title">بلايليستي</div>
+      <div class="playlist" id="playlist">
+        <div class="empty">بلايليستك فاضية — ابحث وأضف أغاني</div>
+      </div>
+
+      <div class="export-row">
+        <button class="btn-ghost" id="exportJson">⬇ JSON</button>
+        <button class="btn-ghost" id="exportCsv">⬇ CSV</button>
+        <button class="btn-ghost" id="exportTxt">⬇ TXT</button>
+        <label class="btn-ghost" style="display:inline-flex; align-items:center; padding:8px 12px;">
+          ⬆ استيراد JSON
+          <input type="file" id="importFile" accept=".json" style="display:none;">
+        </label>
+      </div>
     </div>
 
-    <div class="export-row">
-      <button class="btn-ghost" id="exportJson">⬇ JSON</button>
-      <button class="btn-ghost" id="exportCsv">⬇ CSV</button>
-      <button class="btn-ghost" id="exportTxt">⬇ TXT</button>
-      <label class="btn-ghost" style="display:inline-flex; align-items:center; padding:8px 12px;">
-        ⬆ استيراد JSON
-        <input type="file" id="importFile" accept=".json" style="display:none;">
-      </label>
+    <div class="panel" id="myPlaylistsPanel" style="margin-top:20px;">
+      <div class="section-title">قوائمك الحقيقية على يوتيوب</div>
+      <div class="pl-select-row">
+        <select id="myPlaylistsSelect"></select>
+        <button class="btn-ghost" id="newPlaylistBtn">➕ قائمة جديدة</button>
+      </div>
+      <div class="playlist" id="myPlaylistVideos">
+        <div class="empty">اختر قائمة من فوق تشوف اللي فيها</div>
+      </div>
     </div>
   </div>
 
@@ -511,6 +594,204 @@ function onYouTubeIframeAPIReady(){
   tag.src = "https://www.youtube.com/iframe_api";
   document.body.appendChild(tag);
 })();
+(function loadGIS(){
+  const tag = document.createElement('script');
+  tag.src = "https://accounts.google.com/gsi/client";
+  tag.async = true; tag.defer = true;
+  document.body.appendChild(tag);
+})();
+
+/* ====== GOOGLE SIGN-IN + REAL YOUTUBE PLAYLISTS ====== */
+const CLIENT_ID = "977570004509-ujti3ssuhonejnnd1hen2k7kpg7ti82e.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/youtube";
+let accessToken = null;
+let myPlaylists = [];
+let tokenClient = null;
+
+function ensureTokenClient(){
+  if(tokenClient || !window.google) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if(resp.error){ alert('ما قدرنا نسجل دخولك، جرب مرة ثانية'); return; }
+      accessToken = resp.access_token;
+      onSignedIn();
+    }
+  });
+}
+
+document.getElementById('signInBtn').addEventListener('click', () => {
+  ensureTokenClient();
+  if(!tokenClient){
+    alert('لحظة، النظام لسه يحمّل... جرب بعد ثانيتين');
+    return;
+  }
+  tokenClient.requestAccessToken();
+});
+
+function onSignedIn(){
+  const bar = document.getElementById('accountBar');
+  bar.innerHTML = `
+    <div class="account-info">✅ داخل حسابك الحين</div>
+    <button class="gbtn" id="signOutBtn">تسجيل خروج</button>
+  `;
+  document.getElementById('signOutBtn').addEventListener('click', signOut);
+  document.getElementById('myPlaylistsPanel').classList.add('show');
+  fetchMyPlaylists();
+}
+
+function signOut(){
+  if(accessToken && window.google){
+    google.accounts.oauth2.revoke(accessToken, () => {});
+  }
+  accessToken = null;
+  myPlaylists = [];
+  document.getElementById('myPlaylistsPanel').classList.remove('show');
+  const bar = document.getElementById('accountBar');
+  bar.innerHTML = `<button class="gbtn" id="signInBtn">🔑 سجّل دخولك بحساب جوجل</button>`;
+  document.getElementById('signInBtn').addEventListener('click', () => {
+    ensureTokenClient();
+    tokenClient.requestAccessToken();
+  });
+}
+
+async function fetchMyPlaylists(){
+  try{
+    const res = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    myPlaylists = (data.items || []).map(p => ({ id: p.id, title: p.snippet.title }));
+    renderMyPlaylistsSelect();
+  }catch(e){
+    alert('ما قدرنا نجيب قوائمك، جرب تسجل دخول من جديد');
+  }
+}
+
+function renderMyPlaylistsSelect(){
+  const sel = document.getElementById('myPlaylistsSelect');
+  if(myPlaylists.length === 0){
+    sel.innerHTML = `<option value="">ما عندك قوائم لسه</option>`;
+  } else {
+    sel.innerHTML = myPlaylists.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
+  }
+  sel.onchange = () => { if(sel.value) loadPlaylistVideos(sel.value); };
+  if(myPlaylists.length > 0) loadPlaylistVideos(myPlaylists[0].id);
+}
+
+async function loadPlaylistVideos(playlistId){
+  const box = document.getElementById('myPlaylistVideos');
+  box.innerHTML = `<div class="empty">جاري التحميل...</div>`;
+  try{
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    if(!data.items || data.items.length === 0){
+      box.innerHTML = `<div class="empty">القائمة هذي فاضية لسه</div>`;
+      return;
+    }
+    box.innerHTML = '';
+    data.items.forEach(item => {
+      const videoId = item.snippet.resourceId.videoId;
+      const title = item.snippet.title;
+      const thumb = item.snippet.thumbnails && item.snippet.thumbnails.default ? item.snippet.thumbnails.default.url : '';
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <img src="${thumb}" alt="">
+        <div class="title">${escapeHtml(title)}</div>
+        <button class="btn-ghost" data-play>▶</button>
+        <button class="btn-ghost" data-del>✕</button>
+      `;
+      div.querySelector('[data-play]').addEventListener('click', () => {
+        if(playerReady) { ytPlayer.loadVideoById(videoId); ytPlayer.playVideo(); }
+      });
+      div.querySelector('[data-del]').addEventListener('click', () => deletePlaylistItem(item.id, playlistId));
+      box.appendChild(div);
+    });
+  }catch(e){
+    box.innerHTML = `<div class="empty">صار خطأ، جرب مرة ثانية</div>`;
+  }
+}
+
+async function deletePlaylistItem(itemId, playlistId){
+  try{
+    await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?id=${itemId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    loadPlaylistVideos(playlistId);
+  }catch(e){
+    alert('ما قدرنا نحذفها، جرب مرة ثانية');
+  }
+}
+
+document.getElementById('newPlaylistBtn').addEventListener('click', async () => {
+  const name = prompt('اسم القائمة الجديدة:');
+  if(!name) return;
+  const newId = await createPlaylist(name);
+  if(newId) await fetchMyPlaylists();
+});
+
+async function createPlaylist(name){
+  try{
+    const res = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        snippet: { title: name },
+        status: { privacyStatus: 'private' }
+      })
+    });
+    const data = await res.json();
+    return data.id || null;
+  }catch(e){
+    alert('ما قدرنا نسوي القائمة، جرب مرة ثانية');
+    return null;
+  }
+}
+
+async function addVideoToPlaylist(playlistId, videoId, btn){
+  try{
+    await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        snippet: {
+          playlistId,
+          resourceId: { kind: 'youtube#video', videoId }
+        }
+      })
+    });
+    if(btn){ const old = btn.textContent; btn.textContent = '✅ تم'; setTimeout(() => btn.textContent = old, 1500); }
+  }catch(e){
+    alert('ما قدرنا نضيفها، جرب مرة ثانية');
+  }
+}
+
+async function saveVideoToPlaylist(selectEl, videoId, btn){
+  const value = selectEl.value;
+  if(!value) return;
+  if(value === '__new__'){
+    const name = prompt('اسم القائمة الجديدة:');
+    if(!name) return;
+    const newId = await createPlaylist(name);
+    if(newId){
+      await addVideoToPlaylist(newId, videoId, btn);
+      await fetchMyPlaylists();
+    }
+  } else {
+    await addVideoToPlaylist(value, videoId, btn);
+  }
+}
 
 /* ====== SEARCH ====== */
 const searchInput = document.getElementById('searchInput');
@@ -539,12 +820,25 @@ async function doSearch(){
       const thumb = item.snippet.thumbnails.default.url;
       const div = document.createElement('div');
       div.className = 'item';
+      div.style.flexWrap = 'wrap';
       div.innerHTML = `
         <img src="${thumb}" alt="">
         <div class="title">${escapeHtml(title)}</div>
         <button class="btn-ghost" data-add>➕</button>
+        ${accessToken ? `
+        <div class="save-row" style="width:100%;">
+          <select class="pl-inline-select">
+            ${myPlaylists.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('')}
+            <option value="__new__">➕ قائمة جديدة</option>
+          </select>
+          <button class="btn-ghost" data-save>💾 حفظها</button>
+        </div>` : ''}
       `;
       div.querySelector('[data-add]').addEventListener('click', () => addToPlaylist({ videoId, title }));
+      if(accessToken){
+        const sel = div.querySelector('.pl-inline-select');
+        div.querySelector('[data-save]').addEventListener('click', (e) => saveVideoToPlaylist(sel, videoId, e.target));
+      }
       searchResults.appendChild(div);
     });
   }catch(err){
