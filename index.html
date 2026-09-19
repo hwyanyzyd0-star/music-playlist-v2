@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مشغل بلايليست يوتيوب | Yazeed Al7wyan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b1210;
+    --panel: #101915;
+    --panel-2: #141f1a;
+    --green: #006c35;
+    --green-bright: #0e9b52;
+    --gold: #c9a227;
+    --text: #ede9df;
+    --muted: #7c8c86;
+    --line: #1e2b25;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Cairo', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 105px;
+  }
+  h1,h2,h3,.brand{ font-family:'Cairo', sans-serif; }
+
+  /* ====== INTRO / SPLASH SCREEN ====== */
+  #intro{
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    transition: opacity 0.6s ease;
+  }
+  #intro.fade-out{
+    opacity: 0;
+    pointer-events: none;
+  }
+  .intro-logo{
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--green-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    opacity: 0;
+    animation: introFadeIn 0.6s ease forwards 0.1s;
+  }
+  .intro-sub{
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: introFadeIn 0.6s ease forwards 0.3s;
+  }
+  .intro-spinner{
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid var(--line);
+    border-top-color: var(--green-bright);
+    animation: spin 0.9s linear infinite;
+    opacity: 0;
+    animation: introFadeIn 0.4s ease forwards 0.15s, spin 0.9s linear infinite 0.15s;
+  }
+  .brave-reveal{
+    margin-top: 16px;
+    width: 60px;
+    height: 60px;
+    position: relative;
+    opacity: 0;
+    animation: introFadeIn 0.3s ease forwards 0.7s;
+  }
+  .brave-circle{
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #FF7A45, #FB542B 60%, #d6431f 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    clip-path: circle(0% at 50% 50%);
+    animation: braveOpen 0.7s cubic-bezier(0.65, 0, 0.35, 1) forwards 0.9s;
+    box-shadow: 0 0 0 0 rgba(251,84,43,0.4);
+  }
+  .brave-circle svg{
+    width: 34px;
+    height: 34px;
+    opacity: 0;
+    transform: scale(0.6);
+    animation: braveIconIn 0.4s ease forwards 1.35s;
+  }
+  .brave-text{
+    margin-top: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    white-space: nowrap;
+    color: #ff8a5c;
+    opacity: 0;
+    animation: introFadeIn 0.5s ease forwards 1.55s, emberGlow 1.6s ease-in-out infinite 2.1s;
+  }
+  .brave-text b{
+    color: #FB542B;
+  }
+  @keyframes emberGlow{
+    0%, 100%{
+      text-shadow: 0 0 4px rgba(251,84,43,0.5), 0 0 10px rgba(255,122,69,0.3);
+    }
+    50%{
+      text-shadow: 0 0 10px rgba(251,84,43,0.9), 0 0 22px rgba(255,138,92,0.7), 0 0 34px rgba(255,90,40,0.4);
+    }
+  }
+  @keyframes braveOpen{
+    to{ clip-path: circle(75% at 50% 50%); }
+  }
+  @keyframes braveIconIn{
+    to{ opacity: 1; transform: scale(1); }
+  }
+  @keyframes introFadeIn{
+    to{ opacity: 1; }
+  }
+  @keyframes spin{
+    to{ transform: rotate(360deg); }
+  }
+
+  /* ====== BRAVE-ONLY WELCOME TOAST ====== */
+  #braveWelcome{
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translate(-50%, -120%);
+    z-index: 998;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #1a0f0a, #14100c);
+    border: 1px solid #FB542B;
+    border-radius: 999px;
+    padding: 10px 18px;
+    box-shadow: 0 4px 24px rgba(251,84,43,0.35);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 92vw;
+  }
+  #braveWelcome.show{
+    transform: translate(-50%, 0);
+  }
+  #braveWelcome svg{
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    animation: braveFlicker 1.6s ease-in-out infinite;
+  }
+  #braveWelcome span{
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #ffd8c2;
+    white-space: nowrap;
+  }
+  #braveWelcome b{ color: #FB542B; }
+  @keyframes braveFlicker{
+    0%, 100%{ transform: scale(1); }
+    50%{ transform: scale(1.15); }
+  }
+
+  /* ====== GOOGLE ACCOUNT BAR ====== */
+  .account-bar{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px 0;
+    flex-wrap: wrap;
+  }
+  .gbtn{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .gbtn:hover{ border-color: var(--green-bright); }
+  .account-info{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 6px 12px 6px 6px;
+    border-radius: 999px;
+  }
+  .account-info img{
+    width: 26px; height: 26px;
+    border-radius: 50%;
+  }
+
+  /* ====== MY YOUTUBE PLAYLISTS PANEL ====== */
+  #myPlaylistsPanel{ display: none; }
+  #myPlaylistsPanel.show{ display: block; }
+  .pl-select-row{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  select{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    width: 100%;
+  }
+  .save-row{
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .save-row select{ flex: 1; }
+  .sadu-strip{
+    height: 6px;
+    width: 100%;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--green) 0 10px,
+      var(--gold) 10px 12px,
+      var(--green) 12px 22px,
+      #7a1f1f 22px 24px
+    );
+    opacity: 0.9;
+  }
+
+  header{
+    padding: 28px 20px 18px;
+    text-align: center;
+    position: relative;
+  }
+  header h1{
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--green-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p{
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .container{
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media (min-width: 860px){
+    .container{ grid-template-columns: 1.1fr 1fr; align-items: start; }
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+
+  .search-row{
+    display:flex; gap:8px; margin-bottom:14px;
+  }
+  input[type="text"], input[type="file"]{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 0.95rem;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+  }
+  input[type="text"]:focus{ border-color: var(--green-bright); }
+
+  button{
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  button:active{ transform: scale(0.96); }
+
+  .btn-primary{
+    background: var(--green-bright);
+    color: #05130c;
+    padding: 11px 18px;
+    white-space: nowrap;
+  }
+  .btn-ghost{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 8px 12px;
+  }
+  .btn-ghost:hover{ border-color: var(--gold); }
+  #voiceBtn.listening{
+    background: #7a1f1f;
+    border-color: #ff5a5a;
+    animation: micPulse 1s ease-in-out infinite;
+  }
+  @keyframes micPulse{
+    0%, 100%{ box-shadow: 0 0 0 0 rgba(255,90,90,0.5); }
+    50%{ box-shadow: 0 0 0 8px rgba(255,90,90,0); }
+  }
+
+  #player-wrap{
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  #player{ width:100%; height:100%; }
+
+  .now-title{
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    min-height: 1.3em;
+    color: var(--gold);
+  }
+
+  .controls{
+    display:flex; gap:8px; justify-content:center; margin-bottom: 4px;
+  }
+
+  .search-results, .playlist{
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: var(--panel-2);
+    border: 1px solid transparent;
+  }
+  .item:hover{ border-color: var(--line); }
+  .item img{
+    width: 64px; height: 36px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .item .title{
+    font-size: 0.82rem;
+    line-height: 1.3;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .item.playing{ border-color: var(--green-bright); background: #10241a; }
+  .drag-handle{ cursor: grab; color: var(--muted); font-size: 1.1rem; padding: 0 2px; }
+  .item.dragging{ opacity: 0.4; }
+
+  .section-title{
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .empty{
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align:center;
+    padding: 24px 10px;
+  }
+
+  .export-row{
+    display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .badge{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(90deg, #05130c, #0d1f16, #05130c);
+    color: var(--gold);
+    text-align: center;
+    padding: 10px 12px 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-top: 1px solid var(--green);
+    animation: glow 3s ease-in-out infinite;
+  }
+  .badge .brave-mini{
+    display: block;
+    margin-top: 3px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #ff8a5c;
+    letter-spacing: 0.2px;
+    animation: emberGlow 1.6s ease-in-out infinite;
+  }
+  .badge .brave-mini b{ color: #FB542B; }
+  @keyframes glow{
+    0%, 100% { box-shadow: 0 0 6px rgba(0,108,53,0.4) inset; }
+    50% { box-shadow: 0 0 22px rgba(0,108,53,0.9) inset; }
+  }
+
+  ::-webkit-scrollbar{ width: 6px; }
+  ::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div id="intro">
+  <div class="intro-spinner"></div>
+  <div class="intro-logo">🎵 بلايليست</div>
+  <div class="intro-sub">صُنع في السعودية 🇸🇦</div>
+  <div class="brave-reveal">
+    <div class="brave-circle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2.5L4.5 5.2v6.1c0 5.1 3.1 8.6 7.5 10.2c4.4-1.6 7.5-5.1 7.5-10.2V5.2L12 2.5Z"
+              fill="none" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M12 5L7 6.9v4.4c0 3.7 2.2 6.2 5 7.4c2.8-1.2 5-3.7 5-7.4V6.9L12 5Z" fill="#ffffff"/>
+      </svg>
+    </div>
+  </div>
+  <div class="brave-text">تجربة أفضل في متصفح <b>Brave</b></div>
+</div>
+
+<div id="braveWelcome">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2.5L4.5 5.2v6.1c0 5.1 3.1 8.6 7.5 10.2c4.4-1.6 7.5-5.1 7.5-10.2V5.2L12 2.5Z" fill="#FB542B"/>
+    <path d="M12 5L7 6.9v4.4c0 3.7 2.2 6.2 5 7.4c2.8-1.2 5-3.7 5-7.4V6.9L12 5Z" fill="#1a0f0a"/>
+  </svg>
+  <span>يا مبدع! فاتح <b>Brave</b>؟ ذوقك تحفة 🔥</span>
+</div>
+
+<div class="sadu-strip"></div>
+<header>
+  <h1 class="brand">🎵 بلايليست</h1>
+  <p>ابحث، رتّب، وشغّل بلايليستك من يوتيوب</p>
+</header>
+
+<div class="account-bar" id="accountBar">
+  <button class="gbtn" id="signInBtn">🔑 سجّل دخولك بحساب جوجل</button>
+</div>
+
+<div class="container">
+
+  <!-- LEFT: Player + Search -->
+  <div>
+    <div class="panel">
+      <div id="player-wrap"><div id="player"></div></div>
+      <div class="now-title" id="nowTitle">اختر أغنية من البلايليست للتشغيل</div>
+      <div class="controls">
+        <button class="btn-ghost" id="prevBtn">⏮ السابق</button>
+        <button class="btn-ghost" id="nextBtn">التالي ⏭</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <div class="section-title">البحث في يوتيوب</div>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="اكتب اسم الأغنية أو الفنان...">
+        <button class="btn-ghost" id="voiceBtn" title="بحث صوتي">🎙️</button>
+        <button class="btn-primary" id="searchBtn">بحث</button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <div class="empty">نتائج البحث بتظهر هنا</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Playlist -->
+  <div>
+    <div class="panel">
+      <div class="section-title">بلايليستي</div>
+      <div class="playlist" id="playlist">
+        <div class="empty">بلايليستك فاضية — ابحث وأضف أغاني</div>
+      </div>
+
+      <div class="export-row">
+        <button class="btn-ghost" id="exportJson">⬇ JSON</button>
+        <button class="btn-ghost" id="exportCsv">⬇ CSV</button>
+        <button class="btn-ghost" id="exportTxt">⬇ TXT</button>
+        <label class="btn-ghost" style="display:inline-flex; align-items:center; padding:8px 12px;">
+          ⬆ استيراد JSON
+          <input type="file" id="importFile" accept=".json" style="display:none;">
+        </label>
+      </div>
+    </div>
+
+    <div class="panel" id="myPlaylistsPanel" style="margin-top:20px;">
+      <div class="section-title">قوائمك الحقيقية على يوتيوب</div>
+      <div class="pl-select-row">
+        <select id="myPlaylistsSelect"></select>
+        <button class="btn-ghost" id="newPlaylistBtn">➕ قائمة جديدة</button>
+      </div>
+      <div class="playlist" id="myPlaylistVideos">
+        <div class="empty">اختر قائمة من فوق تشوف اللي فيها</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="badge">Yazeed Al7wyan · Made in Saudi Arabia 🇸🇦<span class="brave-mini">تجربة أفضل في متصفح <b>Brave</b></span></div>
+
+<script>
+/* ====== INTRO SCREEN LOGIC ====== */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const intro = document.getElementById('intro');
+    intro.classList.add('fade-out');
+    setTimeout(() => {
+      intro.remove();
+      checkBraveAndWelcome();
+    }, 650);
+  }, 2900);
+});
+
+/* ====== BRAVE DETECTION (real, native API — not a guess) ====== */
+async function checkBraveAndWelcome(){
+  try{
+    const isBrave = !!(navigator.brave && await navigator.brave.isBrave());
+    if(isBrave){
+      const toast = document.getElementById('braveWelcome');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+  }catch(e){ /* not Brave, or API unavailable — silently ignore */ }
+}
+
+/* ====== CONFIG ====== */
+const YT_API_KEY = "AIzaSyDSR8DiiBMiQcnQeo2lW5XK7XySsQTublE"; // note: public quota only, no privileged access
+const STORAGE_KEY = "musicPlaylistItems_v2";
+
+/* ====== STATE ====== */
+let playlist = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let currentIndex = -1;
+let ytPlayer = null;
+let playerReady = false;
+
+/* Unified playback context: 'local' (site playlist) or 'yt' (real YouTube playlist) */
+let activeContext = 'local';
+let ytPlaylistVideos = []; // videos of the currently opened real YouTube playlist
+let ytCurrentIndex = -1;
+
+/* ====== YOUTUBE IFRAME PLAYER ====== */
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('player', {
+    height: '100%', width: '100%',
+    playerVars: { rel: 0 },
+    events: {
+      onReady: () => { playerReady = true; },
+      onStateChange: (e) => {
+        if(e.data === YT.PlayerState.ENDED) playNext();
+      }
+    }
+  });
+}
+(function loadYT(){
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.body.appendChild(tag);
+})();
+(function loadGIS(){
+  const tag = document.createElement('script');
+  tag.src = "https://accounts.google.com/gsi/client";
+  tag.async = true; tag.defer = true;
+  document.body.appendChild(tag);
+})();
+
+/* ====== GOOGLE SIGN-IN + REAL YOUTUBE PLAYLISTS ====== */
+const CLIENT_ID = "977570004509-ujti3ssuhonejnnd1hen2k7kpg7ti82e.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/youtube";
+let accessToken = null;
+let myPlaylists = [];
+let tokenClient = null;
+
+function ensureTokenClient(){
+  if(tokenClient || !window.google) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if(resp.error){ alert('ما قدرنا نسجل دخولك، جرب مرة ثانية'); return; }
+      accessToken = resp.access_token;
+      onSignedIn();
+    }
+  });
+}
+
+document.getElementById('signInBtn').addEventListener('click', () => {
+  ensureTokenClient();
+  if(!tokenClient){
+    alert('لحظة، النظام لسه يحمّل... جرب بعد ثانيتين');
+    return;
+  }
+  tokenClient.requestAccessToken();
+});
+
+function onSignedIn(){
+  const bar = document.getElementById('accountBar');
+  bar.innerHTML = `
+    <div class="account-info">✅ داخل حسابك الحين</div>
+    <button class="gbtn" id="signOutBtn">تسجيل خروج</button>
+  `;
+  document.getElementById('signOutBtn').addEventListener('click', signOut);
+  document.getElementById('myPlaylistsPanel').classList.add('show');
+  fetchMyPlaylists();
+}
+
+function signOut(){
+  if(accessToken && window.google){
+    google.accounts.oauth2.revoke(accessToken, () => {});
+  }
+  accessToken = null;
+  myPlaylists = [];
+  document.getElementById('myPlaylistsPanel').classList.remove('show');
+  const bar = document.getElementById('accountBar');
+  bar.innerHTML = `<button class="gbtn" id="signInBtn">🔑 سجّل دخولك بحساب جوجل</button>`;
+  document.getElementById('signInBtn').addEventListener('click', () => {
+    ensureTokenClient();
+    tokenClient.requestAccessToken();
+  });
+}
+
+async function fetchMyPlaylists(){
+  try{
+    const res = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    myPlaylists = (data.items || []).map(p => ({ id: p.id, title: p.snippet.title }));
+    renderMyPlaylistsSelect();
+  }catch(e){
+    alert('ما قدرنا نجيب قوائمك، جرب تسجل دخول من جديد');
+  }
+}
+
+function renderMyPlaylistsSelect(){
+  const sel = document.getElementById('myPlaylistsSelect');
+  if(myPlaylists.length === 0){
+    sel.innerHTML = `<option value="">ما عندك قوائم لسه</option>`;
+  } else {
+    sel.innerHTML = myPlaylists.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
+  }
+  sel.onchange = () => { if(sel.value) loadPlaylistVideos(sel.value); };
+  if(myPlaylists.length > 0) loadPlaylistVideos(myPlaylists[0].id);
+}
+
+let currentYtPlaylistId = null;
+
+async function loadPlaylistVideos(playlistId){
+  const box = document.getElementById('myPlaylistVideos');
+  box.innerHTML = `<div class="empty">جاري التحميل...</div>`;
+  currentYtPlaylistId = playlistId;
+  try{
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    if(!data.items || data.items.length === 0){
+      ytPlaylistVideos = [];
+      box.innerHTML = `<div class="empty">القائمة هذي فاضية لسه</div>`;
+      return;
+    }
+    ytPlaylistVideos = data.items.map(item => ({
+      itemId: item.id,
+      videoId: item.snippet.resourceId.videoId,
+      title: item.snippet.title,
+      thumb: item.snippet.thumbnails && item.snippet.thumbnails.default ? item.snippet.thumbnails.default.url : ''
+    }));
+    renderYtPlaylistVideos();
+  }catch(e){
+    box.innerHTML = `<div class="empty">صار خطأ، جرب مرة ثانية</div>`;
+  }
+}
+
+function renderYtPlaylistVideos(){
+  const box = document.getElementById('myPlaylistVideos');
+  box.innerHTML = '';
+  ytPlaylistVideos.forEach((v, i) => {
+    const div = document.createElement('div');
+    div.className = 'item' + (activeContext === 'yt' && i === ytCurrentIndex ? ' playing' : '');
+    div.innerHTML = `
+      <img src="${v.thumb}" alt="">
+      <div class="title">${escapeHtml(v.title)}</div>
+      <button class="btn-ghost" data-play>▶</button>
+      <button class="btn-ghost" data-del>✕</button>
+    `;
+    div.querySelector('[data-play]').addEventListener('click', () => playYtIndex(i));
+    div.querySelector('[data-del]').addEventListener('click', () => deletePlaylistItem(v.itemId, currentYtPlaylistId));
+    box.appendChild(div);
+  });
+}
+
+function playYtIndex(index){
+  if(index < 0 || index >= ytPlaylistVideos.length || !playerReady) return;
+  activeContext = 'yt';
+  ytCurrentIndex = index;
+  ytPlayer.loadVideoById(ytPlaylistVideos[index].videoId);
+  ytPlayer.playVideo();
+  updateNowTitle();
+  renderYtPlaylistVideos();
+}
+
+async function deletePlaylistItem(itemId, playlistId){
+  try{
+    await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?id=${itemId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    loadPlaylistVideos(playlistId);
+  }catch(e){
+    alert('ما قدرنا نحذفها، جرب مرة ثانية');
+  }
+}
+
+document.getElementById('newPlaylistBtn').addEventListener('click', async () => {
+  const name = prompt('اسم القائمة الجديدة:');
+  if(!name) return;
+  const newId = await createPlaylist(name);
+  if(newId){
+    await fetchMyPlaylists();
+    const sel = document.getElementById('myPlaylistsSelect');
+    sel.value = newId;
+    loadPlaylistVideos(newId);
+  }
+});
+
+async function createPlaylist(name){
+  try{
+    const res = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        snippet: { title: name },
+        status: { privacyStatus: 'private' }
+      })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.id){
+      const msg = (data.error && data.error.message) ? data.error.message : 'خطأ غير معروف';
+      alert('ما قدرنا نسوي القائمة: ' + msg);
+      return null;
+    }
+    return data.id;
+  }catch(e){
+    alert('ما قدرنا نسوي القائمة، تأكد من اتصالك بالإنترنت وجرب مرة ثانية');
+    return null;
+  }
+}
+
+async function addVideoToPlaylist(playlistId, videoId, btn){
+  try{
+    const res = await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        snippet: {
+          playlistId,
+          resourceId: { kind: 'youtube#video', videoId }
+        }
+      })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      const msg = (data.error && data.error.message) ? data.error.message : 'خطأ غير معروف';
+      alert('ما قدرنا نضيفها: ' + msg);
+      return;
+    }
+    if(btn){ const old = btn.textContent; btn.textContent = '✅ تم'; setTimeout(() => btn.textContent = old, 1500); }
+  }catch(e){
+    alert('ما قدرنا نضيفها، تأكد من اتصالك بالإنترنت وجرب مرة ثانية');
+  }
+}
+
+async function saveVideoToPlaylist(selectEl, videoId, btn){
+  const value = selectEl.value;
+  if(!value) return;
+  if(value === '__new__'){
+    const name = prompt('اسم القائمة الجديدة:');
+    if(!name) return;
+    const newId = await createPlaylist(name);
+    if(newId){
+      await addVideoToPlaylist(newId, videoId, btn);
+      await fetchMyPlaylists();
+    }
+  } else {
+    await addVideoToPlaylist(value, videoId, btn);
+  }
+}
+
+/* ====== SEARCH ====== */
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchResults = document.getElementById('searchResults');
+
+searchBtn.addEventListener('click', doSearch);
+searchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSearch(); });
+
+/* ====== VOICE SEARCH ====== */
+const voiceBtn = document.getElementById('voiceBtn');
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening = false;
+
+if(SpeechRecognitionAPI){
+  recognition = new SpeechRecognitionAPI();
+  recognition.lang = 'ar-SA';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => { isListening = true; voiceBtn.classList.add('listening'); };
+  recognition.onend = () => { isListening = false; voiceBtn.classList.remove('listening'); };
+  recognition.onerror = (event) => {
+    isListening = false;
+    voiceBtn.classList.remove('listening');
+    alert('صار خطأ: ' + event.error + ' — صوّر لي هالرسالة');
+  };
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    searchInput.value = transcript;
+    doSearch();
+  };
+
+  voiceBtn.addEventListener('click', () => {
+    if(isListening){ recognition.stop(); return; }
+    try{ recognition.start(); }
+    catch(e){ /* already started */ }
+  });
+} else {
+  voiceBtn.addEventListener('click', () => {
+    alert('متصفحك ما يدعم البحث الصوتي، جرب من كروم أو بريف على الجوال أو الكمبيوتر');
+  });
+}
+
+async function doSearch(){
+  const q = searchInput.value.trim();
+  if(!q) return;
+  searchResults.innerHTML = `<div class="empty">جاري البحث...</div>`;
+  try{
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=12&q=${encodeURIComponent(q)}&key=${YT_API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!data.items || data.items.length === 0){
+      searchResults.innerHTML = `<div class="empty">ما فيه نتائج، جرّب كلمة ثانية</div>`;
+      return;
+    }
+    searchResults.innerHTML = '';
+    data.items.forEach(item => {
+      const videoId = item.id.videoId;
+      const title = item.snippet.title;
+      const thumb = item.snippet.thumbnails.default.url;
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.style.flexWrap = 'wrap';
+      div.innerHTML = `
+        <img src="${thumb}" alt="">
+        <div class="title">${escapeHtml(title)}</div>
+        <button class="btn-ghost" data-add>➕</button>
+        ${accessToken ? `
+        <div class="save-row" style="width:100%;">
+          <select class="pl-inline-select">
+            ${myPlaylists.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('')}
+            <option value="__new__">➕ قائمة جديدة</option>
+          </select>
+          <button class="btn-ghost" data-save>💾 حفظها</button>
+        </div>` : ''}
+      `;
+      div.querySelector('[data-add]').addEventListener('click', () => addToPlaylist({ videoId, title }));
+      if(accessToken){
+        const sel = div.querySelector('.pl-inline-select');
+        div.querySelector('[data-save]').addEventListener('click', (e) => saveVideoToPlaylist(sel, videoId, e.target));
+      }
+      searchResults.appendChild(div);
+    });
+  }catch(err){
+    searchResults.innerHTML = `<div class="empty">صار خطأ بالبحث. تأكد إنك ما تشغّله محليًا — لازم يكون منشور على GitHub Pages بسبب قيود CORS.</div>`;
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ====== PLAYLIST MANAGEMENT ====== */
+function addToPlaylist(track){
+  playlist.push(track);
+  save();
+  renderPlaylist();
+  if(currentIndex === -1) playAt(0);
+}
+
+function removeFromPlaylist(index){
+  playlist.splice(index, 1);
+  if(currentIndex === index) { currentIndex = -1; updateNowTitle(); }
+  else if(currentIndex > index) currentIndex--;
+  save();
+  renderPlaylist();
+}
+
+function playAt(index){
+  if(index < 0 || index >= playlist.length || !playerReady) return;
+  activeContext = 'local';
+  currentIndex = index;
+  ytPlayer.loadVideoById(playlist[index].videoId);
+  ytPlayer.playVideo();
+  updateNowTitle();
+  renderPlaylist();
+}
+
+function playNext(){
+  if(activeContext === 'yt' && ytPlaylistVideos.length){
+    playYtIndex((ytCurrentIndex + 1) % ytPlaylistVideos.length);
+  } else if(playlist.length){
+    playAt((currentIndex + 1) % playlist.length);
+  }
+}
+function playPrev(){
+  if(activeContext === 'yt' && ytPlaylistVideos.length){
+    playYtIndex((ytCurrentIndex - 1 + ytPlaylistVideos.length) % ytPlaylistVideos.length);
+  } else if(playlist.length){
+    playAt((currentIndex - 1 + playlist.length) % playlist.length);
+  }
+}
+
+document.getElementById('nextBtn').addEventListener('click', playNext);
+document.getElementById('prevBtn').addEventListener('click', playPrev);
+
+function updateNowTitle(){
+  const el = document.getElementById('nowTitle');
+  if(activeContext === 'yt' && ytCurrentIndex >= 0 && ytPlaylistVideos[ytCurrentIndex]){
+    el.textContent = `▶ يشتغل الحين: ${ytPlaylistVideos[ytCurrentIndex].title}`;
+  } else if(activeContext === 'local' && currentIndex >= 0){
+    el.textContent = `▶ يشتغل الحين: ${playlist[currentIndex].title}`;
+  } else {
+    el.textContent = 'اختر أغنية من البلايليست للتشغيل';
+  }
+}
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist)); }
+
+function renderPlaylist(){
+  const el = document.getElementById('playlist');
+  if(playlist.length === 0){
+    el.innerHTML = `<div class="empty">بلايليستك فاضية — ابحث وأضف أغاني</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  playlist.forEach((track, i) => {
+    const div = document.createElement('div');
+    div.className = 'item' + (i === currentIndex ? ' playing' : '');
+    div.draggable = true;
+    div.dataset.index = i;
+    div.innerHTML = `
+      <span class="drag-handle">⠿</span>
+      <div class="title">${escapeHtml(track.title)}</div>
+      <button class="btn-ghost" data-play>▶</button>
+      <button class="btn-ghost" data-remove>✕</button>
+    `;
+    div.querySelector('[data-play]').addEventListener('click', () => playAt(i));
+    div.querySelector('[data-remove]').addEventListener('click', () => removeFromPlaylist(i));
+    attachDragEvents(div);
+    el.appendChild(div);
+  });
+}
+
+/* ====== DRAG & DROP REORDER ====== */
+let dragSrcIndex = null;
+function attachDragEvents(el){
+  el.addEventListener('dragstart', () => {
+    dragSrcIndex = Number(el.dataset.index);
+    el.classList.add('dragging');
+  });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  el.addEventListener('dragover', (e) => e.preventDefault());
+  el.addEventListener('drop', () => {
+    const targetIndex = Number(el.dataset.index);
+    if(dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+    const [moved] = playlist.splice(dragSrcIndex, 1);
+    playlist.splice(targetIndex, 0, moved);
+    if(currentIndex === dragSrcIndex) currentIndex = targetIndex;
+    save();
+    renderPlaylist();
+  });
+}
+
+/* ====== EXPORT / IMPORT ====== */
+function download(filename, content, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportJson').addEventListener('click', () => {
+  download('playlist.json', JSON.stringify(playlist, null, 2), 'application/json');
+});
+
+document.getElementById('exportCsv').addEventListener('click', () => {
+  const rows = ['videoId,title', ...playlist.map(t => `${t.videoId},"${t.title.replace(/"/g,'""')}"`)];
+  download('playlist.csv', rows.join('\n'), 'text/csv');
+});
+
+document.getElementById('exportTxt').addEventListener('click', () => {
+  const lines = playlist.map((t, i) => `${i+1}. ${t.title} — https://youtu.be/${t.videoId}`);
+  download('playlist.txt', lines.join('\n'), 'text/plain');
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const imported = JSON.parse(reader.result);
+      if(Array.isArray(imported)){
+        playlist = imported;
+        save();
+        renderPlaylist();
+      }
+    }catch(err){
+      alert('ملف JSON غير صالح');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ====== INIT ====== */
+renderPlaylist();
+</script>
+
+</body>
+</html>
